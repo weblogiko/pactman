@@ -55,7 +55,7 @@ class MockServer(HTTPServer):
         server_address = ("", pact.port)
         super().__init__(server_address, MockHTTPRequestHandler)
         self.interactions = []
-        self.log = logging.getLogger(__name__ + "." + pact.provider.name)
+        self.log = logging.getLogger(f"{__name__}.{pact.provider.name}")
         self.log.addHandler(logging.FileHandler(f"{pact.log_dir}/{pact.provider.name}.log"))
         self.log.setLevel(logging.DEBUG)
         self.log.propagate = False

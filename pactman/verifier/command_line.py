@@ -137,23 +137,22 @@ def get_pacts(args):
     result_log_level = get_log_level(args)
     result_factory = partial(CaptureResult, level=result_log_level)
     if args.local_pact_file:
-        pacts = [BrokerPact.load_file(args.local_pact_file, result_factory)]
-    else:
-        broker_config = PactBrokerConfig(
-            args.broker_url, args.broker_token, args.consumer_version_tag
-        )
-        pacts = BrokerPacts(args.provider_name, broker_config, result_factory).consumers()
-    return pacts
+        return [BrokerPact.load_file(args.local_pact_file, result_factory)]
+    broker_config = PactBrokerConfig(
+        args.broker_url, args.broker_token, args.consumer_version_tag
+    )
+    return BrokerPacts(
+        args.provider_name, broker_config, result_factory
+    ).consumers()
 
 
 def get_log_level(args):
     if args.quiet:
-        result_log_level = logging.WARNING
+        return logging.WARNING
     elif args.verbose:
-        result_log_level = logging.DEBUG
+        return logging.DEBUG
     else:
-        result_log_level = logging.INFO
-    return result_log_level
+        return logging.INFO
 
 
 def get_custom_headers(args):

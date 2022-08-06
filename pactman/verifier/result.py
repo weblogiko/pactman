@@ -31,11 +31,11 @@ class LoggedResult(Result):
         log.info(f"Verifying {interaction}")
 
     def warn(self, message):
-        log.warning(" " + message)
+        log.warning(f" {message}")
 
     def fail(self, message, path=None):
         self.success = self.FAIL
-        log.warning(" " + message)
+        log.warning(f" {message}")
         return not message
 
 
@@ -62,7 +62,7 @@ class PytestResult(Result):  # pragma: no cover
         __tracebackhide__ = True
         self.success = self.FAIL
         if path:
-            message += " at " + format_path(path)
+            message += f" at {format_path(path)}"
         log.error(message)
         raise Failed(message) from None
 
@@ -98,9 +98,9 @@ class CaptureResult(Result):
 
     def end(self):
         if self.success:
-            print(Fore.GREEN + "PASSED")
+            print(f"{Fore.GREEN}PASSED")
         else:
-            print(Fore.RED + "FAILED")
+            print(f"{Fore.RED}FAILED")
         if self.messages:
             print((Fore.RESET + "\n").join(self.messages))
 
@@ -110,7 +110,7 @@ class CaptureResult(Result):
     def fail(self, message, path=None):
         self.success = self.FAIL
         if path:
-            message += " at " + format_path(path)
+            message += f" at {format_path(path)}"
         log.error(message)
         return not message
 
@@ -120,4 +120,4 @@ class CaptureResult(Result):
             color = Fore.RED
         elif record.levelno >= logging.WARNING:
             color = Fore.YELLOW
-        self.messages.append(" " + color + record.msg)
+        self.messages.append(f" {color}{record.msg}")

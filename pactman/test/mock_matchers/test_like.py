@@ -8,7 +8,7 @@ def test_is_something_like():
 
 
 def test_valid_types():
-    types = [None, list(), dict(), 1, 1.0, "string", "unicode", Matcher()]
+    types = [None, [], {}, 1, 1.0, "string", "unicode", Matcher()]
 
     for t in types:
         SomethingLike(t)

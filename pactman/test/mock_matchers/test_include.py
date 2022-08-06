@@ -7,7 +7,7 @@ def test_valid_types():
     Includes("string", "sample data")
 
 
-@pytest.mark.parametrize("object", [None, list(), dict(), set(), 1, 1.0, b"bytes"])
+@pytest.mark.parametrize("object", [None, [], {}, set(), 1, 1.0, b"bytes"])
 def test_invalid_types(object):
     with pytest.raises(AssertionError) as e:
         Includes(object, "sample data")
@@ -39,7 +39,7 @@ def test_mock_usage_pass_validation():
     )
 
     with pact:
-        requests.post(pact.uri + "/foo", json={"a": "ham", "b": "has bee in it"})
+        requests.post(f"{pact.uri}/foo", json={"a": "ham", "b": "has bee in it"})
 
 
 def test_mock_usage_fail_validation():
@@ -53,4 +53,4 @@ def test_mock_usage_fail_validation():
     )
 
     with pytest.raises(AssertionError), pact:
-        requests.post(pact.uri + "/foo", json={"a": "ham", "b": "wasp"})
+        requests.post(f"{pact.uri}/foo", json={"a": "ham", "b": "wasp"})

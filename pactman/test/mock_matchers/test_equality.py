@@ -3,7 +3,7 @@ import requests
 from pactman import Consumer, Equals, Like, Provider
 
 
-@pytest.mark.parametrize("object", [None, list(), dict(), 1, 1.0, "string"])
+@pytest.mark.parametrize("object", [None, [], {}, 1, 1.0, "string"])
 def test_valid_types(object):
     Equals(object)
 
@@ -38,7 +38,7 @@ def test_mock_usage_pass_validation():
     )
 
     with pact:
-        requests.post(pact.uri + "/foo", json={"a": "ham", "b": "bee"})
+        requests.post(f"{pact.uri}/foo", json={"a": "ham", "b": "bee"})
 
 
 def test_mock_usage_fail_validation():
@@ -52,4 +52,4 @@ def test_mock_usage_fail_validation():
     )
 
     with pytest.raises(AssertionError), pact:
-        requests.post(pact.uri + "/foo", json={"a": "ham", "b": "wasp"})
+        requests.post(f"{pact.uri}/foo", json={"a": "ham", "b": "wasp"})

@@ -49,7 +49,6 @@ class Response:
     def generate_v3_matchingRules(self):
         # TODO check there's generation *and* verification tests for all these
         matchingRules = get_matching_rules_v3(self.headers, "headers")
-        body_rules = get_matching_rules_v3(self.body, "$")
-        if body_rules:
+        if body_rules := get_matching_rules_v3(self.body, "$"):
             matchingRules["body"] = body_rules
         return matchingRules

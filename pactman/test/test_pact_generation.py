@@ -125,20 +125,20 @@ def test_pacts_written():
     with tempfile.TemporaryDirectory() as d:
         pact = Consumer("C").has_pact_with(Provider("P"), pact_dir=d)
         with pact.given("g").upon_receiving("r").with_request("get", "/foo").will_respond_with(200):
-            requests.get(pact.uri + "/foo")
+            requests.get(f"{pact.uri}/foo")
 
         # force a failure
         with pytest.raises(AssertionError):
             with pact.given("g").upon_receiving("r2").with_request("get", "/bar").will_respond_with(
-                200
-            ):
-                requests.get(pact.uri + "/foo")
+                            200
+                        ):
+                requests.get(f"{pact.uri}/foo")
 
         # make sure mocking still works
         with pact.given("g").upon_receiving("r2").with_request("get", "/bar").will_respond_with(
-            200
-        ):
-            requests.get(pact.uri + "/bar")
+                    200
+                ):
+            requests.get(f"{pact.uri}/bar")
 
         # ensure two pacts written
         with open(pact.pact_json_filename) as f:
@@ -157,7 +157,7 @@ def test_detect_mismatch_request_manual_mode():
             .will_respond_with(200)
         )
         with pact:
-            requests.get(pact.uri + "/foo")
+            requests.get(f"{pact.uri}/foo")
 
         # force a failure by specifying the same given/providerState but different request
         pact = (
@@ -170,18 +170,18 @@ def test_detect_mismatch_request_manual_mode():
         )
         with pytest.raises(PactInteractionMismatch):
             with pact:
-                requests.get(pact.uri + "/bar")
+                requests.get(f"{pact.uri}/bar")
 
 
 def test_detect_mismatch_request_retained_relationship():
     with tempfile.TemporaryDirectory() as d:
         pact = Consumer("C").has_pact_with(Provider("P"), pact_dir=d)
         with pact.given("g").upon_receiving("r").with_request("get", "/foo").will_respond_with(200):
-            requests.get(pact.uri + "/foo")
+            requests.get(f"{pact.uri}/foo")
 
         # force a failure by specifying the same given/providerState but different request
         with pytest.raises(PactInteractionMismatch):
             with pact.given("g").upon_receiving("r").with_request("get", "/bar").will_respond_with(
-                200
-            ):
-                requests.get(pact.uri + "/bar")
+                            200
+                        ):
+                requests.get(f"{pact.uri}/bar")

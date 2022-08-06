@@ -62,12 +62,9 @@ class Request:
         matchingRules = get_matching_rules_v3(self.path, "path")
         matchingRules.update(split_header_paths(get_matching_rules_v3(self.headers, "headers")))
 
-        # body and query rules look different
-        body_rules = get_matching_rules_v3(self.body, "$")
-        if body_rules:
+        if body_rules := get_matching_rules_v3(self.body, "$"):
             matchingRules["body"] = body_rules
-        query_rules = get_matching_rules_v3(self.query, "query")
-        if query_rules:
+        if query_rules := get_matching_rules_v3(self.query, "query"):
             expand_query_rules(query_rules)
             matchingRules["query"] = query_rules
         return matchingRules

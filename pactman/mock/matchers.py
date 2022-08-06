@@ -293,11 +293,11 @@ def generate_ruby_protocol(term):
     elif isinstance(term, dict):
         return {k: generate_ruby_protocol(v) for k, v in term.items()}
     elif isinstance(term, list):
-        return [generate_ruby_protocol(t) for i, t in enumerate(term)]
+        return [generate_ruby_protocol(t) for t in term]
     elif issubclass(term.__class__, (Matcher,)):
         return term.ruby_protocol()
     else:
-        raise ValueError("Unknown type: %s" % type(term))
+        raise ValueError(f"Unknown type: {type(term)}")
 
 
 # For backwards compatiblity with test code that uses pact-python to declare pacts,
@@ -317,7 +317,7 @@ except ImportError:
 
 # this function is long and complex (C901) because it has to handle the pact-python
 # types :-(
-def get_generated_values(input):  # noqa: C901
+def get_generated_values(input):    # noqa: C901
     """
     Resolve (nested) Matchers to their generated values for assertion.
 
@@ -333,7 +333,7 @@ def get_generated_values(input):  # noqa: C901
     if isinstance(input, dict):
         return {k: get_generated_values(v) for k, v in input.items()}
     if isinstance(input, list):
-        return [get_generated_values(t) for i, t in enumerate(input)]
+        return [get_generated_values(t) for t in input]
     elif isinstance(input, LIKE_CLASSES):
         return get_generated_values(input.matcher)
     elif isinstance(input, EACHLIKE_CLASSES):
@@ -347,12 +347,12 @@ def get_generated_values(input):  # noqa: C901
     elif isinstance(input, Includes):
         return input.generate
     else:
-        raise ValueError("Unknown type: %s" % type(input))
+        raise ValueError(f"Unknown type: {type(input)}")
 
 
 # this function is long and complex (C901) because it has to handle the pact-python
 # types :-(
-def get_matching_rules_v2(input, path):  # noqa: C901
+def get_matching_rules_v2(input, path):    # noqa: C901
     """Turn a matcher into the matchingRules structure for pact JSON.
 
     This is done recursively, adding new paths as new matching rules
@@ -363,22 +363,22 @@ def get_matching_rules_v2(input, path):  # noqa: C901
     if isinstance(input, dict):
         rules = {}
         for k, v in input.items():
-            sub_path = path + "." + k
-            rules.update(get_matching_rules_v2(v, sub_path))
+            sub_path = f"{path}.{k}"
+            rules |= get_matching_rules_v2(v, sub_path)
         return rules
     if isinstance(input, list):
         rules = {}
-        for i, v in enumerate(input):
-            sub_path = path + "[*]"
-            rules.update(get_matching_rules_v2(v, sub_path))
+        for v in input:
+            sub_path = f"{path}[*]"
+            rules |= get_matching_rules_v2(v, sub_path)
         return rules
     if isinstance(input, LIKE_CLASSES):
         rules = {path: {"match": "type"}}
-        rules.update(get_matching_rules_v2(input.matcher, path))
+        rules |= get_matching_rules_v2(input.matcher, path)
         return rules
     if isinstance(input, EACHLIKE_CLASSES):
         rules = {path: {"match": "type", "min": input.minimum}}
-        rules.update(get_matching_rules_v2(input.matcher, path))
+        rules |= get_matching_rules_v2(input.matcher, path)
         return rules
     if isinstance(input, TERM_CLASSES):
         return {path: {"regex": input.matcher}}
@@ -387,7 +387,7 @@ def get_matching_rules_v2(input, path):  # noqa: C901
     if isinstance(input, Includes):
         raise Includes.NotAllowed("Includes() cannot be used in pact version 2")
 
-    raise ValueError("Unknown type: %s" % type(input))
+    raise ValueError(f"Unknown type: {type(input)}")
 
 
 class MatchingRuleV3(dict):
@@ -398,18 +398,18 @@ class MatchingRuleV3(dict):
             return
         if self.handle_pact_python_types(input, path):
             return
-        raise ValueError("Unknown type: %s" % type(input))
+        raise ValueError(f"Unknown type: {type(input)}")
 
     def handle_basic_types(self, input, path):
         if input is None or isinstance(input, (str, int, float, bool)):
             return True
         if isinstance(input, dict):
             for k, v in input.items():
-                self.generate(v, path + "." + k)
+                self.generate(v, f"{path}.{k}")
             return True
         if isinstance(input, list):
             for v in input:
-                self.generate(v, path + "[*]")
+                self.generate(v, f"{path}[*]")
             return True
         return False
 
