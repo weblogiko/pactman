@@ -15,7 +15,7 @@ class RuleFailed(Exception):
     def __init__(self, path, message):
         if isinstance(path, list):
             path = format_path(path)
-        message = path + " " + message
+        message = f"{path} {message}"
         super().__init__(message)
 
 
@@ -88,9 +88,7 @@ def weight_path(spec_path, element_path):
 
 
 def fold_type(obj):
-    if type(obj) == OrderedDict:
-        return dict
-    return type(obj)
+    return dict if type(obj) == OrderedDict else type(obj)
 
 
 class WeightedRule:
@@ -180,11 +178,7 @@ class Matcher:
         if "matchers" in rule:
             # v3 matchingRules always have a matchers array, even if there's a single rule
             return MultipleMatchers(path, **rule)
-        if "regex" in rule:
-            # there's a weirdness in the spec here: it promotes use of regex without a match type :(
-            type_name = "regex"
-        else:
-            type_name = rule.get("match", "type")
+        type_name = "regex" if "regex" in rule else rule.get("match", "type")
         if type_name not in cls.REGISTRY:
             log.warning(f'invalid match type "{type_name}" in rule at path {path}')
             type_name = "invalid"
@@ -203,13 +197,15 @@ class MatchType(Matcher):
 
     def apply(self, data, spec, path):
         log.debug(f"match type {data!r} {spec!r} {path!r}")
-        if type(spec) in (int, float):
-            if type(data) not in (int, float):
-                raise RuleFailed(
-                    path, f"not correct type ({nice_type(data)} is not {nice_type(spec)})"
-                )
-        elif fold_type(spec) != fold_type(data):
-            raise RuleFailed(path, f"not correct type ({nice_type(data)} is not {nice_type(spec)})")
+        if (
+            type(spec) in (int, float)
+            and type(data) not in (int, float)
+            or type(spec) not in (int, float)
+            and fold_type(spec) != fold_type(data)
+        ):
+            raise RuleFailed(
+                path, f"not correct type ({nice_type(data)} is not {nice_type(spec)})"
+            )
         self.check_min(data, path)
         self.check_max(data, path)
 
@@ -332,12 +328,8 @@ def rule_matchers_v2(rules):
     for path, spec in rules.items():
         split = list(split_path(path))
         section = split[1]
-        if section == "query":
-            # query rules need to be fudged so they match the elements of the *array* if the path
-            # doesn't already reference the array - so $.query.customer_number will become
-            # $.query.customer_number[*] but $.query.customer_number[1] will be untouched
-            if split[-1][0] not in "*0123456789":
-                path += "[*]"
+        if section == "query" and split[-1][0] not in "*0123456789":
+            path += "[*]"
         matchers[section].append(Matcher.get_matcher(path, spec))
     return matchers
 
@@ -386,8 +378,10 @@ def rule_matchers_v3(rules):
         # array elements, but the data they match is keys mapping to an array, so alter the path such that the rule
         # maps to that array: "Q1" becomes "Q1[*]"
         matchers["query"] = [
-            Matcher.get_matcher(path + "[*]", rule) for path, rule in rules["query"].items()
+            Matcher.get_matcher(f"{path}[*]", rule)
+            for path, rule in rules["query"].items()
         ]
+
     for section in ["header", "body"]:
         if section in rules:
             matchers[section] = [

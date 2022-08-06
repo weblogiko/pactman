@@ -62,12 +62,7 @@ class PactRequestHandler:
         if not self.body:
             return ""
         content_type = [self.headers[h] for h in self.headers if h.lower() == "content-type"]
-        if content_type:
-            content_type = content_type[0]
-        else:
-            # default content type for pacts
-            content_type = "application/json"
-
+        content_type = content_type[0] if content_type else "application/json"
         if content_type == "application/json":
             return json.loads(self.body)
         elif content_type == "application/x-www-form-urlencoded":
@@ -87,10 +82,9 @@ class PactRequestHandler:
         raise NotImplementedError()
 
     def handle_response_encoding(self, response, headers):
-        # default to content-type to json
-        # rfc4627 states JSON is Unicode and defaults to UTF-8
-        content_type = [headers[h] for h in headers if h.lower() == "content-type"]
-        if content_type:
+        if content_type := [
+            headers[h] for h in headers if h.lower() == "content-type"
+        ]:
             content_type = content_type[0]
             if "application/json" not in content_type:
                 return response["body"]

@@ -34,8 +34,7 @@ class PactBrokerConfig:
         self.url = f"{url_parts.scheme}://{host}/"
 
         if not self.auth:
-            auth = os.environ.get("PACT_BROKER_AUTH")
-            if auth:
+            if auth := os.environ.get("PACT_BROKER_AUTH"):
                 self.auth = tuple(auth.split(":"))
 
         token = token or os.environ.get("PACT_BROKER_TOKEN")

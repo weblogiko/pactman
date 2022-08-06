@@ -8,10 +8,7 @@ class Part:
         self.params = params
 
     def has_param(self, name):
-        for k, v in self.params:
-            if k == name:
-                return True
-        return False
+        return any(k == name for k, v in self.params)
 
     def __repr__(self):
         return f'<Part {", ".join(self.value + ["%s=%s"%i for i in self.params])}>'
@@ -43,11 +40,11 @@ def parse_header(line):
     >>> parse_header("audio/*; q=0.2, audio/basic")
     [Part(["audio/*"], []), Part(["audio/basic"], [("q", "0.2")])]
     """
-    parts = _parseparam(";" + line, ";")
+    parts = _parseparam(f";{line}", ";")
     for part in parts:
         params = []
         key = []
-        for option in _parseparam("," + part, ","):
+        for option in _parseparam(f",{part}", ","):
             i = option.find("=")
             if i >= 0:
                 name = option[:i].strip().lower()

@@ -97,7 +97,7 @@ class MockURLOpenHandler(PactRequestHandler):
     def respond_for_interaction(self, interaction):
         headers = {}
         if "headers" in interaction["response"]:
-            headers.update(interaction["response"]["headers"])
+            headers |= interaction["response"]["headers"]
         if "body" in interaction["response"]:
             body = self.handle_response_encoding(interaction["response"], headers)
         else:

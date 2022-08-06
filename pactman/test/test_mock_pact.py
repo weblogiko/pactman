@@ -276,4 +276,4 @@ def test_multiple_pacts_dont_break_during_teardown():
         .will_respond_with(201)
     )
     with p1, p2:
-        requests.get(p1.uri + "/path")
+        requests.get(f"{p1.uri}/path")

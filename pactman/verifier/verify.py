@@ -183,7 +183,7 @@ class Interaction:
         if r.status_code != 200:
             text = repr(r.text)
             if len(text) > 60:
-                text = text[:60] + "..." + text[-1]
+                text = f"{text[:60]}...{text[-1]}"
             log.debug(f"HTTP {r.status_code} from provider state setup URL: {text}")
             return self.result.warn(f"Invalid provider state {state!r}")
         log.info(f"Using provider state {state!r}")
@@ -195,7 +195,7 @@ class Interaction:
     @property
     def _request_headers(self):
         headers = dict(self.extra_provider_headers)
-        headers.update(self.request.get("headers", {}))
+        headers |= self.request.get("headers", {})
         return headers
 
     @property
@@ -256,10 +256,7 @@ class ResponseVerifier:
                         continue
                     actual = response.headers[actual]
                     # In <v3 the header rules were under $.headers... but in v3 they're {'header': ...} ugh
-                    if self.pact.semver.major > 2:
-                        rule_section = "header"
-                    else:
-                        rule_section = "headers"
+                    rule_section = "header" if self.pact.semver.major > 2 else "headers"
                     if not self.check_rules(actual, expected, [rule_section, header]):
                         log.info(f"{self.interaction_name} headers: {response.headers}")
                         return False
@@ -268,10 +265,11 @@ class ResponseVerifier:
                     self.result.fail(f"{self.interaction_name} missing header {header!r}")
                     return False
 
-        if self.body is not MISSING:
-            if not self.check_rules(response.json(), self.body, ["body"]):
-                log.info(f"{self.interaction_name} data was: {response.json()}")
-                return False
+        if self.body is not MISSING and not self.check_rules(
+            response.json(), self.body, ["body"]
+        ):
+            log.info(f"{self.interaction_name} data was: {response.json()}")
+            return False
         return True
 
     def check_rules(self, data, spec, path):
@@ -279,12 +277,10 @@ class ResponseVerifier:
         if self.matching_rules:
             # if we have matchingRules then just look at those things
             r = self.apply_rules(data, spec, path)
+        elif path[0] in ("header", "headers"):
+            r = self.compare_header(data, spec, path)
         else:
-            # otherwise the actual must equal the expected (excepting dict elements in actual that are unexpected)
-            if path[0] in ("header", "headers"):
-                r = self.compare_header(data, spec, path)
-            else:
-                r = self.compare(data, spec, ["body"])
+            r = self.compare(data, spec, ["body"])
         log.debug(f"check_rules success={r!r}")
         return r
 
@@ -439,12 +435,12 @@ class ResponseVerifier:
             # both arrays are empty, there's no further rules to apply
             return True
 
-        if not spec and data:
+        if not spec:
             return self.result.fail(
                 f"{self.interaction_name} spec requires empty array but data has contents", path
             )
 
-        if spec and not data:
+        if not data:
             return self.result.fail(
                 f"{self.interaction_name} spec requires data in array but data is empty", path
             )
@@ -464,14 +460,7 @@ class ResponseVerifier:
         log.debug(f"apply_rules_array_element data={data!r} spec={spec!r} path={format_path(path)}")
         weighted_rule = self.find_rule(path)
         log.debug(f"... element rule lookup got {weighted_rule}")
-        if len(spec) == 1 and index:
-            # if the spec is a single element but data is longer there's a *good chance* that it's a sample
-            # for matching rules to be applied to
-            spec = spec[0]
-        else:
-            # element to element comparisons
-            spec = spec[index]
-
+        spec = spec[0] if len(spec) == 1 and index else spec[index]
         # now do normal rule application
         return self.apply_rules(data, spec, path)
 
@@ -520,9 +509,10 @@ class RequestVerifier(ResponseVerifier):
                 return self.result.fail(
                     f"Request path {request.path!r} does not match expected {self.path!r}"
                 )
-        if self.query is not MISSING:
-            if not self.verify_query(self.query, request):
-                return False
+        if self.query is not MISSING and not self.verify_query(
+            self.query, request
+        ):
+            return False
         return super().verify(request)
 
     def verify_query(self, spec_query, request):
@@ -543,13 +533,18 @@ class RequestVerifier(ResponseVerifier):
         return True
 
     def compare_dict(self, data, spec, path):
-        if not super().compare_dict(data, spec, path):
-            return False
-        # check for unexpected data in the request
-        for k in data:
-            if k not in spec:
-                return self.result.fail("Unexpected data in request", path + [k])
-        return True
+        return (
+            next(
+                (
+                    self.result.fail("Unexpected data in request", path + [k])
+                    for k in data
+                    if k not in spec
+                ),
+                True,
+            )
+            if super().compare_dict(data, spec, path)
+            else False
+        )
 
 
 MISSING = "MISSING"

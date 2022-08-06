@@ -141,9 +141,10 @@ class Pact(object):
             return
         self._pact_dir_checked = True
         ensure_pact_dir(self.pact_dir)
-        if self.file_write_mode == "overwrite":
-            if os.path.exists(self.pact_json_filename):
-                os.remove(self.pact_json_filename)
+        if self.file_write_mode == "overwrite" and os.path.exists(
+            self.pact_json_filename
+        ):
+            os.remove(self.pact_json_filename)
 
     @property
     def pact_json_filename(self):
